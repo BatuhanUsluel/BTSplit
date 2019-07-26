@@ -1,5 +1,6 @@
 import argparse
 import pandas as pd
+import os
 
 parser = argparse.ArgumentParser("CSV Splitter")
 parser.add_argument("-f", "--file", help="File Name(Required)", type=str, required=True)
@@ -10,19 +11,16 @@ args = parser.parse_args()
 print ("Output FIle:")
 print (args.outputfile)
 
-sep = '.'
-file_no_extension = args.file.split(sep, 1)[0]
+filename, file_extension = os.path.splitext(args.file)
 
 if (args.outputfile==None):
-    args.outputfile = file_no_extension
+    args.outputfile = filename
     
 i=0
 chunksize = args.rows
-first=True
-for chunk in pd.read_csv(args.file, chunksize=chunksize):
-    chunk.to_csv(args.outputfile + args.transition + str(i) + ".csv", sep=',', index=False, header=first)
+for chunk in pd.read_csv(args.file, chunksize=chunksize, skip_blank_lines=False, header=None):
+    chunk.fillna("")
+    chunk.to_csv(args.outputfile + args.transition + str(i) + file_extension, sep=',', index=False, header=False)
     print("-----------------------------------------")
     print(chunk)
     i=i+1
-    if (first):
-        first=False
