@@ -4,6 +4,7 @@ import os
 import xlsxwriter
 from openpyxl import load_workbook
 
+
 def readFile(file, chunksize, extension):
     print (extension)
     if (extension==".csv"):
@@ -18,14 +19,21 @@ def readFile(file, chunksize, extension):
         return [excel_file[i:i+chunksize] for i in range(0,excel_file.shape[0],chunksize)]
     else:
         return None
-        
-def writeFile(chunk, outputFileName, transition, i, extension):
+       
+def writeFile(chunk, outputFileName, transition, i, extension, seperate):
     if (extension==".csv"):
         chunk.to_csv(outputFileName+ transition + str(i) + extension, sep=',', index=False, header=False)
     elif (extension==".xlsx" or extension==".xls"):
-        writer = pd.ExcelWriter(outputFileName+ transition + str(i) + extension, engine='xlsxwriter')
-        chunk.to_excel(writer, sheet_name = 'sheet1', index=False, header=False)
-        writer.save()
+        if (seperate==False):
+            global writer
+            if (writer==None):
+                writer = pd.ExcelWriter("split_" + outputFileName + extension, engine='xlsxwriter')   
+            chunk.to_excel(writer, sheet_name = 'sheet' + str(i), index=False, header=False)
+        else:
+            writer = pd.ExcelWriter(outputFileName+ transition + str(i) + extension, engine='xlsxwriter')
+            chunk.to_excel(writer, sheet_name = 'sheet1', index=False, header=False)
+            writer.save()
+            writer.close()
     else:
         return None
 
@@ -35,6 +43,7 @@ parser.add_argument("-r", "--rows", help="Custom Number of rows per file[defualt
 parser.add_argument("-of", "--outputfile", help="Output file Prefix[defualt: input filename]", type=str, required=False)
 parser.add_argument("-t", "--transition", help="Output file transition[defualt: _]", type=str, required=False, default = "_")
 parser.add_argument("-ot", "--outputtype", help="Output file type(.csv, .xls, .xlsx)[defualt: input type]", type=str, required=False)
+parser.add_argument("-s", "--seperate", help="Have seperate files(True, False)[defualt: False]", type=str, required=False, default = False)
 args = parser.parse_args()
 
 filename, file_extension = os.path.splitext(args.file)
@@ -47,9 +56,14 @@ if (args.outputtype==None):
 
 i=0
 chunksize = args.rows
+writer = None
 for chunk in readFile(args.file,args.rows,file_extension):
     chunk.fillna("")
-    writeFile(chunk, args.outputfile, args.transition, i, args.outputtype)
+    writeFile(chunk, args.outputfile, args.transition, i, args.outputtype, args.seperate)
     print("-----------------------------------------")
     print(chunk)
     i=i+1
+    
+if (writer!=None):
+    writer.save()
+    writer.close()
