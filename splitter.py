@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import xlsxwriter
 from openpyxl import load_workbook
-
+import re
 
 def readFile(file, chunksize, extension, outputtype):
     print (extension)
@@ -21,12 +21,28 @@ def readFile(file, chunksize, extension, outputtype):
         return [excel_file[i:i+chunksize] for i in range(0,excel_file.shape[0],chunksize)]
     else:
         return None
-       
-def writeFile(chunk, outputFileName, transition, i, extension, seperate):
+
+def adjustNumber(match):
+    global i
+    global chunksize
+    #print(i)
+    match = match.group()
+    return str(int(match)-(i*chunksize))
+    
+def helper(a):
+    if (str(a)[:1]!="="):
+        return a
+    pattern = '(?<=[A-Z]).\d{1,7}(?=(?:[^"]*"[^"]*")*[^"]*$)'
+    r2 = re.sub(pattern, adjustNumber, str(a))
+    return r2
+        
+def writeFile(chunk, outputFileName, transition, i, extension, seperate, adjustformulas):
     if (extension==".csv"):
         chunk.to_csv(outputFileName+ transition + str(i) + extension, sep=',', index=False, header=False)
     elif (extension==".xlsx" or extension==".xls"):
         if (seperate==False):
+            if (adjustformulas):
+                chunk = chunk.applymap(helper) 
             global writer
             if (writer==None):
                 writer = pd.ExcelWriter("split_" + outputFileName + extension, engine='xlsxwriter')   
@@ -46,6 +62,7 @@ parser.add_argument("-of", "--outputfile", help="Output file Prefix[defualt: inp
 parser.add_argument("-t", "--transition", help="Output file transition[defualt: _]", type=str, required=False, default = "_")
 parser.add_argument("-ot", "--outputtype", help="Output file type(.csv, .xls, .xlsx)[defualt: input type]", type=str, required=False)
 parser.add_argument("-s", "--seperate", help="Have seperate files(True, False)[defualt: False]", type=str, required=False, default = False)
+parser.add_argument("-aj", "--adjustformulas", help="Adjusts formulas in excel sheets, very computationally expensive(True, False)[defualt: False]", type=str, required=False, default = False)
 args = parser.parse_args()
 
 filename, file_extension = os.path.splitext(args.file)
@@ -60,10 +77,11 @@ i=0
 chunksize = args.rows
 writer = None
 for chunk in readFile(args.file,args.rows,file_extension, args.outputtype):
+    #print(list(chunk.columns))
     chunk.fillna("")
-    writeFile(chunk, args.outputfile, args.transition, i, args.outputtype, args.seperate)
-    print("-----------------------------------------")
-    print(chunk)
+    writeFile(chunk, args.outputfile, args.transition, i, args.outputtype, args.seperate, args.adjustformulas)
+    #print("-----------------------------------------")
+    #print(chunk)
     i=i+1
     
 if (writer!=None):
