@@ -29,18 +29,22 @@ parser.add_argument("-f", "--file", help="File Name(Required)", type=str, requir
 parser.add_argument("-r", "--rows", help="Custom Number of rows per file[defualt: 1048576]", type=int, default=1048576, required=False)
 parser.add_argument("-of", "--outputfile", help="Output file Prefix[defualt: input filename]", type=str, required=False)
 parser.add_argument("-t", "--transition", help="Output file transition[defualt: _]", type=str, required=False, default = "_")
+parser.add_argument("-ot", "--outputtype", help="Output file type(.csv, .xls, .xlsx)[defualt: input type]", type=str, required=False)
 args = parser.parse_args()
 
 filename, file_extension = os.path.splitext(args.file)
 
 if (args.outputfile==None):
     args.outputfile = filename
-    
+   
+if (args.outputtype==None):
+    args.outputtype = file_extension
+
 i=0
 chunksize = args.rows
 for chunk in readFile(args.file,args.rows,file_extension):
     chunk.fillna("")
-    writeFile(chunk, args.outputfile, args.transition, i, file_extension)
+    writeFile(chunk, args.outputfile, args.transition, i, args.outputtype)
     print("-----------------------------------------")
     print(chunk)
     i=i+1
