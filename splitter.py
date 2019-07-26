@@ -5,17 +5,19 @@ import xlsxwriter
 from openpyxl import load_workbook
 
 
-def readFile(file, chunksize, extension):
+def readFile(file, chunksize, extension, outputtype):
     print (extension)
     if (extension==".csv"):
         return pd.read_csv(args.file, chunksize=chunksize, skip_blank_lines=False, header=None)
     elif (extension==".xlsx" or extension==".xls"):
-        # excel_file = pd.read_excel(args.file, skip_blank_lines=False, header=None)
-        wb = load_workbook(filename = args.file)
-        sheet_names = wb.get_sheet_names()
-        name = sheet_names[0]
-        sheet_ranges = wb[name]
-        excel_file = pd.DataFrame(sheet_ranges.values)
+        if (outputtype==".csv"):
+            excel_file = pd.read_excel(args.file, skip_blank_lines=False, header=None)
+        elif(outputtype==".xlsx" or outputtype==".xls"):
+            wb = load_workbook(filename = args.file)
+            sheet_names = wb.get_sheet_names()
+            name = sheet_names[0]
+            sheet_ranges = wb[name]
+            excel_file = pd.DataFrame(sheet_ranges.values)
         return [excel_file[i:i+chunksize] for i in range(0,excel_file.shape[0],chunksize)]
     else:
         return None
@@ -57,7 +59,7 @@ if (args.outputtype==None):
 i=0
 chunksize = args.rows
 writer = None
-for chunk in readFile(args.file,args.rows,file_extension):
+for chunk in readFile(args.file,args.rows,file_extension, args.outputtype):
     chunk.fillna("")
     writeFile(chunk, args.outputfile, args.transition, i, args.outputtype, args.seperate)
     print("-----------------------------------------")
