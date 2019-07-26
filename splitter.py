@@ -23,6 +23,7 @@ def writeFile(chunk, outputFileName, transition, i, extension):
         writer.save()
     else:
         return None
+
 parser = argparse.ArgumentParser("CSV Splitter")
 parser.add_argument("-f", "--file", help="File Name(Required)", type=str, required=True)
 parser.add_argument("-r", "--rows", help="Custom Number of rows per file[defualt: 1048576]", type=int, default=1048576, required=False)
