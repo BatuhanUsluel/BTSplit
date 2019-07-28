@@ -87,3 +87,9 @@ for chunk in readFile(args.file,args.rows,file_extension, args.outputtype):
 if (writer!=None):
     writer.save()
     writer.close()
+    
+#Project ToDo:
+#Add support for formulas in rows following Z(AA,AB) - Regex
+#Formulas seperated in different sheets can referance each other
+#Optimize, test what takes time
+
