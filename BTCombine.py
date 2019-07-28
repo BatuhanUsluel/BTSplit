@@ -1,6 +1,7 @@
 import argparse
 import pandas as pd
 import os
+from openpyxl import load_workbook
 
 parser = argparse.ArgumentParser("CSV & Excel Combiner")
 parser.add_argument("-i", "--input", help="Text file with list of input files, seperated by new lines", type=str, required=True)
@@ -9,14 +10,23 @@ parser.add_argument("-t", "--type", help="Output file type(.csv, .xls, .xlsx)[De
 parser.add_argument("-s", "--single", help="Combine the rows into a single sheet, instead of seperate(only for excel output)[Default: False]", action="store_true", default=False, required=False)
 parser.add_argument("-sn", "--sheetname", help="Custom sheet prefix[Default: file name]", type=str, required=False)
 parser.add_argument("-tr", "--transition", help="Custom sheet transition[Default: None]", type=str, required=False, default = "")
+parser.add_argument("-fv", "--formulavalue", help="When enabled gets excel formula values instead of formulas", action="store_true", required=False, default = False)
 args = parser.parse_args()
 
 
-def readFile(file, file_extension):
+def readFile(file, file_extension, formulavalue):
     if (file_extension==".csv"):
         return pd.read_csv(file, skip_blank_lines=False, header=None)
     elif (file_extension==".xlsx" or file_extension==".xls"):
-        return pd.read_excel(file, skip_blank_lines=False, header=None)
+        if formulavalue:
+            return pd.read_excel(file, skip_blank_lines=False, header=None)
+        else:
+            wb = load_workbook(filename = file)
+            sheet_names = wb.get_sheet_names()
+            name = sheet_names[0]
+            sheet_ranges = wb[name]
+            excel_file = pd.DataFrame(sheet_ranges.values)
+            return excel_file
 
 def write(data, file, file_extension, i, sheetname, transition, filename):
     if (file_extension==".csv"):
@@ -32,7 +42,7 @@ def write(data, file, file_extension, i, sheetname, transition, filename):
             name = sheetname + transition + str(i)
         data.to_excel(writer, sheet_name = name, index=False, header=False)
 
-if (args.type != ".csv" or args.type != ".xls" or args.type != ".xlsx"):
+if (not (args.type == ".csv" or args.type == ".xls" or args.type == ".xlsx")):
     print ("Output type " + args.type + " invalid. Valid output types are: .csv, .xls, .xlsx")
     print ("Quitting")
     quit()
@@ -48,7 +58,7 @@ except FileNotFoundError:
 for file in f:   
     file = file.rstrip()
     filename, file_extension = os.path.splitext(file)
-    data = readFile(file, file_extension.rstrip())
+    data = readFile(file, file_extension.rstrip(), args.formulavalue)
     if (args.single or args.type==".csv"):
         datatotal = datatotal.append(data)
     else:
