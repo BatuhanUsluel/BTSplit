@@ -42,13 +42,13 @@ for file in f:
     file = file.rstrip()
     filename, file_extension = os.path.splitext(file)
     data = readFile(file, file_extension.rstrip())
-    if (args.single):
+    if (args.single or args.type==".csv"):
         datatotal = datatotal.append(data)
     else:
         write(data, args.output, args.type, i, args.sheetname, args.transition, filename)
         i=i+1
         
-if (args.single):
+if (args.single or args.type==".csv"):
     write(datatotal, args.output, args.type, i, args.sheetname, args.transition, "")
 
 if (writer!=None):
