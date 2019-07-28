@@ -20,15 +20,18 @@ def readFile(file, file_extension):
     elif (file_extension==".xlsx" or file_extension==".xls"):
         return pd.read_excel(file, skip_blank_lines=False, header=None)
 
-def write(data, file, file_extension):
+def write(data, file, file_extension, i):
     if (file_extension==".csv"):
         data.to_csv(file + file_extension, sep=',', index=False, header=False)
     elif (file_extension==".xlsx" or file_extension==".xls"):
-        writer = pd.ExcelWriter(file+file_extension, engine='xlsxwriter')   
-        data.to_excel(writer, sheet_name = 'sheet1', index=False, header=False)
-        writer.save()
-        writer.close()
+        global writer
+        if writer == None:
+            writer = pd.ExcelWriter(file+file_extension, engine='xlsxwriter')   
+        data.to_excel(writer, sheet_name = 'sheet' + str(i), index=False, header=False)
+
         
+writer = None
+i=1
 datatotal = pd.DataFrame()
 f = open(args.input, "r")
 for file in f:
@@ -37,5 +40,13 @@ for file in f:
     data = readFile(file, file_extension.rstrip())
     if (args.single):
         datatotal = datatotal.append(data)
+    else:
+        write(data, args.output, args.type, i)
+        i=i+1
         
-write(datatotal, args.output, args.type)
+if (args.single):
+    write(datatotal, args.output, args.type)
+
+if (writer!=None):
+    writer.save()
+    writer.close()
