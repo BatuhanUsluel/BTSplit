@@ -5,7 +5,7 @@ from openpyxl import load_workbook
 import glob
 
 parser = argparse.ArgumentParser("CSV & Excel Combiner")
-parser.add_argument('-f','--filter', nargs='+', help='List of file filters using wildcards (Ex: *.csv) [Default: *.csv, *.xls, *.xlsx]', required=False, default = ["*.csv", "*.xls", "*.xlsx"])
+parser.add_argument('-f','--filter', nargs='+', help='File filters using wildcards to select input files (Ex: *.csv)', required=False)
 parser.add_argument("-i", "--input", help="Text file with list of input files, seperated by new lines", type=str, required=False)
 parser.add_argument("-o", "--output", help="Output file name", type=str, required=True)
 parser.add_argument("-t", "--type", help="Output file type(.csv, .xls, .xlsx)[Default: .xlsx]", type=str, default=".xlsx")
@@ -43,30 +43,54 @@ def write(data, file, file_extension, i, sheetname, transition, filename):
         else:
             name = sheetname + transition + str(i)
         data.to_excel(writer, sheet_name = name, index=False, header=False)
-
+    
 if (not (args.type == ".csv" or args.type == ".xls" or args.type == ".xlsx")):
     print ("Output type " + args.type + " invalid. Valid output types are: .csv, .xls, .xlsx")
     print ("Quitting")
     quit()
+    
 writer = None
 i=1
 datatotal = pd.DataFrame()
 f = None
-try:
-    f = open(args.input, "r")
-except FileNotFoundError:
-    print ("Input file " + args.input + " not found, quitting")
-    quit()
-for file in f:   
-    file = file.rstrip()
-    filename, file_extension = os.path.splitext(file)
-    data = readFile(file, file_extension.rstrip(), args.formulavalue)
-    if (args.single or args.type==".csv"):
-        datatotal = datatotal.append(data)
-    else:
-        write(data, args.output, args.type, i, args.sheetname, args.transition, filename)
-        i=i+1
+
+lookedfiles = []
+for filter in args.filter:
+    files = glob.glob(filter)
+    for file in files:
+        print (file)
+        file = file.rstrip()
+        filename, file_extension = os.path.splitext(file)
+        data = readFile(file, file_extension.rstrip(), args.formulavalue)
+        if (args.single or args.type==".csv"):
+            datatotal = datatotal.append(data)
+        else:
+            write(data, args.output, args.type, i, args.sheetname, args.transition, filename)
+            i=i+1
+        lookedfiles.append(file)
         
+if (args.input==None and args.filter == None):
+    print ("You gave no way to select input files. Please either use -i or -f. Use -h for more help & information")
+    print ("Quitting")
+    quit()
+    
+if (args.input!=None):
+    try:
+        f = open(args.input, "r")
+    except FileNotFoundError:
+        print ("Input file " + args.input + " not found, quitting")
+        quit()
+    for file in f:
+        if (file not in lookedfiles):
+            file = file.rstrip()
+            filename, file_extension = os.path.splitext(file)
+            data = readFile(file, file_extension.rstrip(), args.formulavalue)
+            if (args.single or args.type==".csv"):
+                datatotal = datatotal.append(data)
+            else:
+                write(data, args.output, args.type, i, args.sheetname, args.transition, filename)
+                i=i+1
+            
 if (args.single or args.type==".csv"):
     write(datatotal, args.output, args.type, i, args.sheetname, args.transition, "")
 
