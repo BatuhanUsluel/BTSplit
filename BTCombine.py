@@ -2,9 +2,11 @@ import argparse
 import pandas as pd
 import os
 from openpyxl import load_workbook
+import glob
 
 parser = argparse.ArgumentParser("CSV & Excel Combiner")
-parser.add_argument("-i", "--input", help="Text file with list of input files, seperated by new lines", type=str, required=True)
+parser.add_argument('-f','--filter', nargs='+', help='List of file filters using wildcards (Ex: *.csv) [Default: *.csv, *.xls, *.xlsx]', required=False, default = ["*.csv", "*.xls", "*.xlsx"])
+parser.add_argument("-i", "--input", help="Text file with list of input files, seperated by new lines", type=str, required=False)
 parser.add_argument("-o", "--output", help="Output file name", type=str, required=True)
 parser.add_argument("-t", "--type", help="Output file type(.csv, .xls, .xlsx)[Default: .xlsx]", type=str, default=".xlsx")
 parser.add_argument("-s", "--single", help="Combine the rows into a single sheet, instead of seperate(only for excel output)[Default: False]", action="store_true", default=False, required=False)
@@ -13,7 +15,7 @@ parser.add_argument("-tr", "--transition", help="Custom sheet transition[Default
 parser.add_argument("-fv", "--formulavalue", help="When enabled gets excel formula values instead of formulas", action="store_true", required=False, default = False)
 args = parser.parse_args()
 
-
+print("Filter: " + str(args.filter))
 def readFile(file, file_extension, formulavalue):
     if (file_extension==".csv"):
         return pd.read_csv(file, skip_blank_lines=False, header=None)
